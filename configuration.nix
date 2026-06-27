@@ -41,9 +41,36 @@
   # Configure network connections interactively with nmcli or nmtui.
   networking.networkmanager.enable = true;
 
+  # Use systemd-networkd for network connections
+  systemd.network = {
+    enable = true;
+    networks = {
+      "10-ether-adapter" = {
+        matchConfig = {
+          Name = "enp0s20f0u6c2"
+        };
+        networkConfig = {
+          DHCP = "yes";
+          MulticastDNS = true;
+        };
+      };
+    };
+  };
+
+  # Use systemd-resolved for DNS resolution
+  services.resolved = {
+    enable = true;
+    settings.Resolve = {
+      DNS = "9.9.9.9#dns.quad9.net 149.112.112.112#dns.quad9.net 2620:fe::fe#dns.quad9.net 2620:fe::9#dns.quad9.net";
+      MulticastDNS = true;
+      DNSOverTLS = true;
+    }
+  };
+
   # Set your time zone.
   time.timeZone = "America/Chicago";
 
+  # SSH agent (I think this is primarily for GitHub operations)
   programs.ssh.startAgent = true;
 
   # Configure network proxy if necessary
