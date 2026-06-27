@@ -47,7 +47,7 @@
     networks = {
       "10-ether-adapter" = {
         matchConfig = {
-          Name = "enp0s20f0u6c2"
+          Name = "enp0s20f0u6c2";
         };
         networkConfig = {
           DHCP = "yes";
@@ -64,7 +64,7 @@
       DNS = "9.9.9.9#dns.quad9.net 149.112.112.112#dns.quad9.net 2620:fe::fe#dns.quad9.net 2620:fe::9#dns.quad9.net";
       MulticastDNS = true;
       DNSOverTLS = true;
-    }
+    };
   };
 
   # Set your time zone.
