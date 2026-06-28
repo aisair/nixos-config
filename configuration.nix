@@ -38,9 +38,6 @@
   # Define your hostname.
   networking.hostName = "curren";
 
-  # Configure network connections interactively with nmcli or nmtui.
-  networking.networkmanager.enable = true;
-
   # Use systemd-networkd for network connections
   systemd.network = {
     enable = true;
@@ -56,6 +53,7 @@
       };
     };
   };
+  networking.useDHCP = false;
 
   # Use systemd-resolved for DNS resolution
   services.resolved = {
@@ -117,6 +115,11 @@
     packages = with pkgs; [
       tree
     ];
+    shell = pkgs.fish;
+  };
+
+  programs.fish = {
+    enable = true;
   };
 
   # programs.firefox.enable = true;
