@@ -41,10 +41,29 @@
   # Use systemd-networkd for network connections
   systemd.network = {
     enable = true;
+    links = {
+      "10-usb-ether-adapter" = {
+        matchConfig = {
+          PermanentMACAddress = "9c:69:d3:77:a5:7b";
+        };
+        linkConfig = {
+          Name = "usb-ethernet";
+        };
+      };
+    };
     networks = {
       "10-ether-adapter" = {
         matchConfig = {
-          Name = "enp0s20f0u6c2";
+          Name = "usb-ethernet";
+        };
+        networkConfig = {
+          DHCP = "yes";
+          MulticastDNS = true;
+        };
+      };
+      "20-wireless" = {
+        matchConfig = {
+          Name = "wlan0";
         };
         networkConfig = {
           DHCP = "yes";
@@ -53,6 +72,7 @@
       };
     };
   };
+  networking.wireless.iwd.enable = true;
   networking.useDHCP = false;
 
   # Use systemd-resolved for DNS resolution
@@ -122,6 +142,10 @@
     enable = true;
   };
 
+  programs.mosh = {
+    enable = true;
+  };
+
   # programs.firefox.enable = true;
 
   # List packages installed in system profile.
@@ -130,6 +154,9 @@
     helix
     ghostty.terminfo
     git
+    tealdeer
+    zellij
+    iperf3
   ];
 
   programs.gnupg.agent = {
