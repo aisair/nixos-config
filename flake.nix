@@ -18,15 +18,18 @@
   outputs = inputs@{ self, nixpkgs, agenix, wg-namespace, ... }: {
     # Configuration for host "curren"
     nixosConfigurations.curren = nixpkgs.lib.nixosSystem {
+      system = "x86_64-linux";
       modules = [
         ./configuration.nix
 
         agenix.nixosModules.default
-        {
-          environment.systemPackages = [ agenix.packages.x86_64-linux.default ];
-        }
-
         wg-namespace.nixosModules.default
+
+        {
+          environment.systemPackages = [
+            agenix.packages.x86_64-linux.default
+          ];
+        }
       ];
     };
   };

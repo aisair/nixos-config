@@ -12,6 +12,15 @@
 
   # Use flakes
   nix.settings.experimental-features = [ "nix-command" "flakes" ];
+
+  # Enable Intel QSV
+  hardware.graphics = {
+    enable = true;
+    extraPackages = with pkgs; [
+      intel-media-driver
+      intel-compute-runtime-legacy1
+    ];
+  };
     
   # Use the systemd-boot EFI boot loader.
   boot.loader.systemd-boot.enable = true;
@@ -183,9 +192,6 @@
   # Enable the X11 windowing system.
   # services.xserver.enable = true;
 
-
-  
-
   # Configure keymap in X11
   # services.xserver.xkb.layout = "us";
   # services.xserver.xkb.options = "eurosign:e,caps:escape";
@@ -244,7 +250,6 @@
     iperf3
     nixd
     parted
-    trashy
     ffmpeg
     delta
   ];
@@ -380,6 +385,11 @@
   # Jellyfin server
   services.jellyfin = {
     enable = true;
+  };
+  systemd.services.jellyfin = {
+    environment = {
+      LIBVA_DRIVER_NAME = "iHD";
+    };
   };
 
   # Open ports in the firewall.
