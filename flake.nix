@@ -10,13 +10,23 @@
       url = "github:ryantm/agenix";
       inputs.nixpkgs.follows = "nixpkgs";
     };
+
+    wg-namespace = {
+      url = "github:aisair/wg-namespace-flake";
+    };
   };
-  outputs = inputs@{ self, nixpkgs, agenix, ... }: {
+  outputs = inputs@{ self, nixpkgs, agenix, wg-namespace, ... }: {
     # Configuration for host "curren"
     nixosConfigurations.curren = nixpkgs.lib.nixosSystem {
       modules = [
         ./configuration.nix
+
         agenix.nixosModules.default
+        {
+          environment.systemPackages = [ agenix.packages.x86_64-linux.default ];
+        }
+
+        wg-namespace.nixosModules.default
       ];
     };
   };

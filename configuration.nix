@@ -27,6 +27,10 @@
       device = "/dev/disk/by-uuid/986ab49c-9a9e-4756-af36-b2e59dc3f91d";
       crypttabExtraOpts = [ "tpm2-device=auto" ];
     };
+    crypt-data = {
+      device = "/dev/disk/by-uuid/74f6c796-b7a0-4abf-8b55-c748a60ffe30";
+      crypttabExtraOpts = [ "tpm2-device=auto" ];
+    };
   };
 
   environment.variables = {
@@ -37,6 +41,19 @@
 
   # Define your hostname.
   networking.hostName = "curren";
+
+  age.secrets = {
+    wg-public-secret-key = {
+      file = ./secrets/wg-public-secret-key.age;
+      mode = "g=r";
+      group = "systemd-network";
+    };
+    wg-public-preshared-key = {
+      file = ./secrets/wg-public-preshared-key.age;
+      mode = "g=r";
+      group = "systemd-network";
+    };
+  };
 
   # Use systemd-networkd for network connections
   systemd.network = {
@@ -51,6 +68,30 @@
         };
       };
     };
+    netdevs = {
+      "30-wg-public" = {
+        netdevConfig = {
+          Name = "wg-public";
+          Kind = "wireguard";
+        };
+        wireguardConfig = {
+          PrivateKeyFile = config.age.secrets.wg-public-secret-key.path;
+        };
+        wireguardPeers = [
+          {
+            PublicKey = "PyLCXAQT8KkM4T+dUsOQfn+Ub3pGxfGlxkIApuig+hk=";
+            PresharedKeyFile = config.age.secrets.wg-public-preshared-key.path;
+            AllowedIPs = [
+              "0.0.0.0/0"
+              "::/0"
+            ];
+            # Endpoint = "america3.vpn.airdns.org:1637";
+            Endpoint = "104.193.135.245:1637";
+            PersistentKeepalive = 15;
+          }
+        ];
+      };
+    };
     networks = {
       "10-ether-adapter" = {
         matchConfig = {
@@ -59,6 +100,12 @@
         networkConfig = {
           DHCP = "yes";
           MulticastDNS = true;
+        };
+        dhcpV4Config = {
+          UseHostname = false;
+        };
+        dhcpV6Config = {
+          UseHostname = false;
         };
       };
       "20-wireless" = {
@@ -69,6 +116,29 @@
           DHCP = "yes";
           MulticastDNS = true;
         };
+        dhcpV4Config = {
+          UseHostname = false;
+        };
+        dhcpV6Config = {
+          UseHostname = false;
+        };
+      };
+      "30-wg-public" = {
+        matchConfig = {
+          Name = "wg-public";
+        };
+        dns = [
+          "10.128.0.1"
+          "fd7d:76ee:e68f:a993::1"
+        ];
+        addresses = [
+          {
+            Address = "10.184.2.184/32";
+          }
+          {
+            Address = "fd7d:76ee:e68f:a993:473e:f384:b46b:1565/128";
+          }
+        ];
       };
     };
   };
@@ -84,6 +154,12 @@
       DNSSEC = true;
       DNSOverTLS = true;
     };
+  };
+
+  services.wireguard-namespace = {
+    enable = true;
+    namespaceName = "vpn";
+    interfaceName = "wg-public";
   };
 
   # Set your time zone.
@@ -128,6 +204,17 @@
   # Enable touchpad support (enabled default in most desktopManager).
   # services.libinput.enable = true;
 
+  # Define data group for data disk mounted at /data
+  users.groups = {
+    data = {
+      members = [
+        "aisair"
+        "qbittorrent"
+        "jellyfin"
+      ];
+    };
+  };
+
   # Define a user account. Don't forget to set a password with ‘passwd’.
   users.users.aisair = {
     isNormalUser = true;
@@ -138,30 +225,28 @@
     shell = pkgs.fish;
   };
 
-  programs.fish = {
-    enable = true;
+  programs = {
+    fish.enable = true;
+    mosh.enable = true;
+    git.enable = true;
+    tmux.enable = true;
+    htop.enable = true;
+    gnupg.agent.enable = true;
   };
-
-  programs.mosh = {
-    enable = true;
-  };
-
-  # programs.firefox.enable = true;
 
   # List packages installed in system profile.
   # You can use https://search.nixos.org/ to find more packages (and options).
   environment.systemPackages = with pkgs; [
     helix
     ghostty.terminfo
-    git
     tealdeer
     zellij
     iperf3
+    nixd
+    parted
+    trashy
+    ffmpeg
   ];
-
-  programs.gnupg.agent = {
-    enable = true;
-  };
 
   # Some programs need SUID wrappers, can be configured further or are
   # started in user sessions.
@@ -187,6 +272,81 @@
   # Tailscale daemon
   services.tailscale = {
     enable = true; 
+  };
+
+  # Caddy reverse proxy
+  age.secrets = {
+    caddy-cloudflare-env = {
+      file = ./secrets/caddy-cloudflare-env.age;
+    };
+  };
+  services.caddy = {
+    enable = true;
+    package = pkgs.caddy.withPlugins {
+      plugins = [ "github.com/caddy-dns/cloudflare@v0.2.4" ];
+      hash = "sha256-hEHgAG0F0ozHRAPuxEqLyTATBrE+pajeXDiSNwniorg=";
+    };
+    environmentFile = config.age.secrets.caddy-cloudflare-env.path;
+    globalConfig = ''
+      acme_dns cloudflare {env.CLOUDFLARE_API_TOKEN}
+    '';
+    virtualHosts = {
+      "qb.machitan.party" = {
+        extraConfig = ''
+          reverse_proxy localhost:8080
+        '';
+      };
+    };
+  };
+
+  # qBittorrent daemon
+  services.qbittorrent = {
+    enable = true;
+    extraArgs = [
+      "--confirm-legal-notice"
+    ];
+  };
+  systemd.services.qbittorrent = {
+    bindsTo = [ "wg-netnamespace@vpn.service" ];
+    requires = [ "network-online.target" "wg-netnamespace@vpn.service" ];
+    after = [ "network-online.target" "wg-netnamespace@vpn.service" ];
+    serviceConfig = {
+      NetworkNamespacePath = [ "/var/run/netns/vpn" ];
+      BindReadOnlyPaths = [ "/etc/netns/vpn/resolv.conf:/etc/resolv.conf" ];
+    };
+  };
+  environment.etc."netns/vpn/resolv.conf" = {
+    text = ''
+      nameserver 10.128.0.1
+      nameserver fd7d:76ee:e68f:a993::1
+    '';
+  };
+  systemd.sockets."proxy-to-qbittorrent" = {
+    description = "Socket for proxy to qbittorrent in vpn network namespace";
+    listenStreams = [
+      "8080"
+    ];
+    wantedBy = [ "sockets.target" ];
+  };
+  systemd.services."proxy-to-qbittorrent" = {
+    description = "Proxy to qbittorrent in network namespace";
+    requires = [
+      "qbittorrent.service"
+      "proxy-to-qbittorrent.socket"
+    ];
+    after = [
+      "qbittorrent.service"
+      "proxy-to-qbittorrent.socket"
+    ];
+    unitConfig = {
+      JoinsNamespaceOf = "qbittorrent.service";
+    };
+    serviceConfig = {
+      User = "qbittorrent";
+      Group = "qbittorrent";
+      ExecStart = "${pkgs.systemd}/lib/systemd/systemd-socket-proxyd --exit-idle-time=5min 127.0.0.1:8080";
+      PrivateNetwork = "yes";
+    };
   };
 
   # Open ports in the firewall.
