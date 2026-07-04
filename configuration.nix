@@ -246,6 +246,7 @@
     parted
     trashy
     ffmpeg
+    delta
   ];
 
   # Some programs need SUID wrappers, can be configured further or are
@@ -296,6 +297,11 @@
           reverse_proxy localhost:8080
         '';
       };
+      "jf.machitan.party" = {
+        extraConfig = ''
+          reverse_proxy localhost:8096
+        '';
+      };
     };
   };
 
@@ -312,13 +318,35 @@
     after = [ "network-online.target" "wg-netnamespace@vpn.service" ];
     serviceConfig = {
       NetworkNamespacePath = [ "/var/run/netns/vpn" ];
-      BindReadOnlyPaths = [ "/etc/netns/vpn/resolv.conf:/etc/resolv.conf" ];
+      BindReadOnlyPaths = [
+        "/etc/netns/vpn/resolv.conf:/etc/resolv.conf"
+        "/etc/netns/vpn/nsswitch.conf:/etc/nsswitch.conf"
+      ];
     };
   };
   environment.etc."netns/vpn/resolv.conf" = {
     text = ''
       nameserver 10.128.0.1
       nameserver fd7d:76ee:e68f:a993::1
+    '';
+  };
+  environment.etc."netns/vpn/nsswitch.conf" = {
+    text = ''
+      passwd:    files systemd
+      group:     files [success=merge] systemd
+      shadow:    files systemd
+      sudoers:   files
+
+      hosts:     files dns
+      networks:  files
+
+      ethers:    files
+      services:  files
+      protocols: files
+      rpc:       files
+
+      subuid:    files
+      subgid:    files
     '';
   };
   systemd.sockets."proxy-to-qbittorrent" = {
@@ -347,6 +375,11 @@
       ExecStart = "${pkgs.systemd}/lib/systemd/systemd-socket-proxyd --exit-idle-time=5min 127.0.0.1:8080";
       PrivateNetwork = "yes";
     };
+  };
+
+  # Jellyfin server
+  services.jellyfin = {
+    enable = true;
   };
 
   # Open ports in the firewall.

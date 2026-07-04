@@ -106,11 +106,11 @@
     },
     "wg-namespace": {
       "locked": {
-        "lastModified": 1783098430,
-        "narHash": "sha256-0cQgpZOC9FGsfkymLFMwW0FP+cbiumpj/tzp0KwxAuA=",
+        "lastModified": 1783182502,
+        "narHash": "sha256-+zeZD7mnEVR8s+kqbljhffZgEhCBMIQ02OxlMDxLC4w=",
         "owner": "aisair",
         "repo": "wg-namespace-flake",
-        "rev": "f1b65def52fa1b7c80e4249efd0a3ba66c9c4829",
+        "rev": "b8eca609b6c0bd4c860ed0d3f4df06701715fc18",
         "type": "github"
       },
       "original": {
