@@ -8,7 +8,7 @@
     [ (modulesPath + "/installer/scan/not-detected.nix")
     ];
 
-  boot.initrd.availableKernelModules = [ "xhci_pci" "ahci" "nvme" "usbhid" "sd_mod" "rtsx_pci_sdmmc" ];
+  boot.initrd.availableKernelModules = [ "xhci_pci" "ahci" "nvme" "usbhid" "sd_mod" "sr_mod" "rtsx_pci_sdmmc" ];
   boot.initrd.kernelModules = [ "dm-snapshot" ];
   boot.kernelModules = [ ];
   boot.extraModulePackages = [ ];
@@ -18,15 +18,21 @@
       fsType = "ext4";
     };
 
+  fileSystems."/data" =
+    { device = "/dev/mapper/vg--data-lv--data";
+      fsType = "ext4";
+    };
+
   fileSystems."/boot" =
     { device = "/dev/disk/by-uuid/289A-5754";
       fsType = "vfat";
       options = [ "fmask=0077" "dmask=0077" ];
     };
 
-  fileSystems."/data" =
-    { device = "/dev/mapper/vg--data-lv--data";
-      fsType = "ext4";
+  fileSystems."/srv/nfs/data" =
+    { device = "/data";
+      fsType = "none";
+      options = [ "bind" ];
     };
 
   swapDevices =

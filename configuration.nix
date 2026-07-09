@@ -219,6 +219,7 @@
         "jellyfin"
       ];
     };
+    nfsshare = {};
   };
 
   # Define a user account. Don't forget to set a password with ‘passwd’.
@@ -229,6 +230,14 @@
       tree
     ];
     shell = pkgs.fish;
+  };
+
+  # Service account for NFS server
+  users.users.nfsshare = {
+    isSystemUser = true;
+    uid = 989;
+    group = "nfsshare";
+    extraGroups = [ "data" ];
   };
 
   programs = {
@@ -252,6 +261,7 @@
     parted
     ffmpeg
     delta
+    trashy
   ];
 
   # Some programs need SUID wrappers, can be configured further or are
@@ -274,6 +284,27 @@
       PermitRootLogin = "no";      
     };
   };
+
+  # NFS daemon
+  services.nfs = {
+    server = {
+      enable = true;
+      exports = ''
+        /srv/nfs 100.64.0.0/10(insecure,ro,fsid=root) fd7a:115c:a1e0::/48(insecure,ro,fsid=root)
+        /srv/nfs/data 100.64.0.0/10(insecure,rw,all_squash,anonuid=989,anongid=988) fd7a:115c:a1e0::/48(insecure,rw,all_squash,anonuid=989,anongid=988)
+      '';
+    };
+    settings = {
+      nfsd = {
+        vers3 = false;
+        vers4 = true;
+        "vers4.0" = true;
+        "vers4.1" = true;
+        "vers4.2" = true;
+      };
+    };
+  };
+  networking.firewall.allowedTCPPorts = [ 2049 ];
 
   # Tailscale daemon
   services.tailscale = {
@@ -327,6 +358,7 @@
         "/etc/netns/vpn/resolv.conf:/etc/resolv.conf"
         "/etc/netns/vpn/nsswitch.conf:/etc/nsswitch.conf"
       ];
+      TimeoutStopSec = lib.mkForce 90;
     };
   };
   environment.etc."netns/vpn/resolv.conf" = {
