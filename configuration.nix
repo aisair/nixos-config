@@ -304,7 +304,9 @@
       };
     };
   };
-  networking.firewall.allowedTCPPorts = [ 2049 ];
+  # Open port 2049 for NFS
+  # Open port 5353 for multicast DNS
+  networking.firewall.allowedTCPPorts = [ 2049 5353 ];
 
   # Tailscale daemon
   services.tailscale = {
