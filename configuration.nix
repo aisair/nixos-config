@@ -78,7 +78,7 @@
       };
     };
     netdevs = {
-      "30-wg-public" = {
+      "30-wg-public" = { # Meridiana
         netdevConfig = {
           Name = "wg-public";
           Kind = "wireguard";
@@ -94,8 +94,7 @@
               "0.0.0.0/0"
               "::/0"
             ];
-            # Endpoint = "america3.vpn.airdns.org:1637";
-            Endpoint = "104.193.135.245:1637";
+            Endpoint = "68.235.35.253:1637";
             PersistentKeepalive = 15;
           }
         ];
