@@ -116,21 +116,21 @@
           UseHostname = false;
         };
       };
-      "20-wireless" = {
-        matchConfig = {
-          Name = "wlan0";
-        };
-        networkConfig = {
-          DHCP = "yes";
-          MulticastDNS = true;
-        };
-        dhcpV4Config = {
-          UseHostname = false;
-        };
-        dhcpV6Config = {
-          UseHostname = false;
-        };
-      };
+      # "20-wireless" = {
+      #   matchConfig = {
+      #     Name = "wlan0";
+      #   };
+      #   networkConfig = {
+      #     DHCP = "yes";
+      #     MulticastDNS = true;
+      #   };
+      #   dhcpV4Config = {
+      #     UseHostname = false;
+      #   };
+      #   dhcpV6Config = {
+      #     UseHostname = false;
+      #   };
+      # };
       "30-wg-public" = {
         matchConfig = {
           Name = "wg-public";
